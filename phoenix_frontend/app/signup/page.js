@@ -9,9 +9,42 @@ import { useState } from 'react';
 export default function SignUpPage() {
   const router = useRouter();
 
-  const handleSubmit = (e) => {
+  // State for form fields
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [error, setError] = useState(null);  // To handle form submission errors
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    router.push('/waitlist-success');
+
+    // Prepare the data to send
+    const userData = {
+      username: email,  // Assuming email is used as the username
+      password,
+      full_name: fullName,
+    };
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        // If registration fails, display the error message
+        setError(data.detail || 'Something went wrong');
+      } else {
+        // If registration is successful, redirect to the waitlist success page
+        router.push('/waitlist-success');
+      }
+    } catch (err) {
+      setError('An error occurred while registering');
+    }
   };
 
   return (
@@ -44,6 +77,19 @@ export default function SignUpPage() {
           <input
             type="email"
             placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 py-3 px-4 rounded-xl mt-2 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600 placeholder:text-gray-600 text-black"
+          />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-base sm:text-lg text-gray-700">Full Name</label>
+          <input
+            type="text"
+            placeholder="Enter your full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
             className="w-full border border-gray-300 py-3 px-4 rounded-xl mt-2 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600 placeholder:text-gray-600 text-black"
           />
         </div>
@@ -53,10 +99,14 @@ export default function SignUpPage() {
           <input
             type="password"
             placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-gray-300 py-3 px-4 rounded-xl mt-2 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600 text-black"
           />
         </div>
 
+        {/* Error Message */}
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         {/* Sign Up Button */}
         <button
