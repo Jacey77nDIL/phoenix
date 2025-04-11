@@ -17,6 +17,7 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+//<<<<<<< Updated upstream
 
     // Prepare the data to send
     const userData = {
@@ -40,11 +41,15 @@ export default function SignUpPage() {
         setError(data.detail || 'Something went wrong');
       } else {
         // If registration is successful, redirect to the waitlist success page
-        router.push('/waitlist-success');
+        router.push('/merchant');
       }
     } catch (err) {
       setError('An error occurred while registering');
     }
+//=======
+    // Update the redirect to a page inside the merchant folder
+    //router.push('/merchant');  // Change this to the actual page path you want to go to
+//>>>>>>>Stashed changes
   };
 
   return (
