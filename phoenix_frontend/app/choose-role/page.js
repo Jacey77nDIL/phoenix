@@ -28,7 +28,7 @@ export default function ChooseRolePage() {
     if (isValidShopName && shopName) {
       setShowSuccessMessage(true);
       setTimeout(() => {
-        window.location.href = '/signup';
+        window.location.href = '/signup/';
       }, 1500); // 1.5 seconds delay before redirecting
     }
   };

@@ -30,6 +30,7 @@ app = FastAPI()
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 db = client[MONGO_DB_NAME]
 users_collection = db["users"]
+collection = db["products"]
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -58,6 +59,23 @@ class UserCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    # Product model
+class Product(BaseModel):
+    title: str
+    price: float
+    image: str  # You can store URLs or base64 if needed
+    rating: int = 4
+
+@app.get("/api/products")
+async def get_products():
+    products = await collection.find().to_list(100)
+    return products
+
+@app.post("/api/products")
+async def create_product(product: Product):
+    result = await collection.insert_one(product.dict())
+    created_product = await collection.find_one({"_id": result.inserted_id})
+    return created_product
 
 @app.on_event("startup")
 async def startup_event():

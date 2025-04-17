@@ -17,9 +17,6 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-//<<<<<<< Updated upstream
-
-    // Prepare the data to send
     const userData = {
       username: email,  // Assuming email is used as the username
       password,
@@ -41,8 +38,9 @@ export default function SignUpPage() {
         setError(data.detail || 'Something went wrong');
       } else {
         // If registration is successful, redirect to the waitlist success page
-        router.push('/merchant');
+        router.push(`/merchant`);
       }
+      
     } catch (err) {
       setError('An error occurred while registering');
     }
