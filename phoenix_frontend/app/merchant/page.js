@@ -49,71 +49,65 @@ export default function MerchantPage() {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      
-      setNewProduct((prev) => ({ 
-        ...prev, 
-        image: URL.createObjectURL(file),
-        imageFile: file
+    if (file && file.type.startsWith('image/')) {
+      setNewProduct((prev) => ({
+        ...prev,
+        image: URL.createObjectURL(file), // For preview
+        imageFile: file, // Store the actual file object
       }));
+    } else {
+      alert("Please select a valid image file.");
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrorMessage('');
+ // Function to handle form submission
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // Create FormData object
+  const formData = new FormData();
+  formData.append('name', newProduct.name);
+  formData.append('price', newProduct.price);
+  
+  // Append the actual file, not the URL
+  if (newProduct.imageFile) {
+    formData.append('image', newProduct.imageFile);
+  }
+  
+  try {
+    // Send the FormData to your API
+    const response = await fetch('/api/upload-product', {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header when using FormData
+      // It will be set automatically including the boundary
+    });
     
-    try {
-      const productData = {
-        title: newProduct.name,
-        price: Number(newProduct.price),
-        description: newProduct.description || 'No description available',
-        image: '/comb.jpg', 
-        rating: 4, 
-      };
-
-
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData),
-      });
-
+    if (response.ok) {
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add product');
-      }
-
-     
+      
+      // Add the new product to the list with the returned image URL
       setProductList((prev) => [
         ...prev,
         {
           id: productList.length + 1,
           title: newProduct.name,
           price: newProduct.price,
-          image: newProduct.image || '/comb.jpg',
+          image: result.imageUrl, // Use the URL returned from the server
           rating: 4,
         },
       ]);
       
-      setConfirmationMessage('Product successfully added to database!');
-      
-
-      setTimeout(() => {
-        setShowModal(false);
-        fetchProducts();
-      }, 2000);
-    } catch (error) {
-      console.error('Error adding product:', error);
-      setErrorMessage(error.message || 'Failed to add product to database');
-    } finally {
-      setIsSubmitting(false);
+      setConfirmationMessage('Product added successfully!');
+      setShowModal(false);
+    } else {
+      setConfirmationMessage('Failed to add product.');
     }
-  };
+  } catch (error) {
+    console.error('Error adding product:', error);
+    setConfirmationMessage('Error adding product.');
+  }
+};
 
   return (
     <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white min-h-screen flex flex-col">
