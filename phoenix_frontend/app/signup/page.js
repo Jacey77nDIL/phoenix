@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+require('dotenv').config();
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function SignUpPage() {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/register', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
