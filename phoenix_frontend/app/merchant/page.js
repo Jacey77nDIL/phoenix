@@ -5,7 +5,6 @@ import { BsPlusCircle } from 'react-icons/bs';
 import { BiSearchAlt } from 'react-icons/bi';
 import Image from 'next/image';
 import Link from 'next/link';
-
 export default function MerchantPage() {
   const [productList, setProductList] = useState([]);
   const [showModal, setShowModal] = useState(false); 
@@ -21,7 +20,7 @@ export default function MerchantPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('http://127.0.0.1:8000/api/products');
       const data = await res.json();
       setProductList(data);
     } catch (err) {
@@ -31,7 +30,7 @@ export default function MerchantPage() {
 
   const toggleModal = () => {
     setShowModal(!showModal);
-    setConfirmationMessage(''); 
+    setConfirmationMessage(' '); 
     setErrorMessage('');
     if (!showModal) {
       
@@ -53,62 +52,50 @@ export default function MerchantPage() {
       setNewProduct((prev) => ({
         ...prev,
         image: URL.createObjectURL(file), // For preview
-        imageFile: file, // Store the actual file object
+        imageFile: file, 
       }));
     } else {
       alert("Please select a valid image file.");
     }
   };
 
- // Function to handle form submission
 const handleSubmit = async (e) => {
   e.preventDefault();
-  
-  // Create FormData object
-  const formData = new FormData();
-  formData.append('name', newProduct.name);
-  formData.append('price', newProduct.price);
-  
-  // Append the actual file, not the URL
-  if (newProduct.imageFile) {
-    formData.append('image', newProduct.imageFile);
-  }
-  
+  setIsSubmitting(true);
+
   try {
-    // Send the FormData to your API
-    const response = await fetch('/api/upload-product', {
+    const imageUrl = newProduct.image || "/placeholder-product.jpg";
+    const productData = {
+      title: newProduct.name,
+      price: parseFloat(newProduct.price),
+      image: imageUrl,
+      rating: 4
+    };
+
+    const response = await fetch('http://127.0.0.1:8000/api/products', {
       method: 'POST',
-      body: formData,
-      // Don't set Content-Type header when using FormData
-      // It will be set automatically including the boundary
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData),
     });
-    
+
     if (response.ok) {
       const result = await response.json();
-      
-      // Add the new product to the list with the returned image URL
-      setProductList((prev) => [
-        ...prev,
-        {
-          id: productList.length + 1,
-          title: newProduct.name,
-          price: newProduct.price,
-          image: result.imageUrl, // Use the URL returned from the server
-          rating: 4,
-        },
-      ]);
-      
+      setProductList((prev) => [...prev, result]);
       setConfirmationMessage('Product added successfully!');
       setShowModal(false);
     } else {
-      setConfirmationMessage('Failed to add product.');
+      const errorData = await response.json();
+      setErrorMessage(errorData.detail || 'Failed to add product');
     }
   } catch (error) {
     console.error('Error adding product:', error);
-    setConfirmationMessage('Error adding product.');
+    setErrorMessage('Error connecting to the server');
+  } finally {
+    setIsSubmitting(false);
   }
 };
-
   return (
     <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white min-h-screen flex flex-col">
       {/* Top Bar */}
@@ -157,15 +144,15 @@ const handleSubmit = async (e) => {
         <div className="flex-1 p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {productList.map((product, index) => (
-              <div key={product.id || index} className="flex flex-col items-start gap-2 transform transition-transform hover:scale-105 hover:shadow-lg">
+              <div key={newProduct.id || index} className="flex flex-col items-start gap-2 transform transition-transform hover:scale-105 hover:shadow-lg">
                 <div className="w-full h-48 overflow-hidden rounded-lg mb-1">
-                  <Image src={product.image} alt={product.title} width={192} height={192} className="object-cover w-full h-full"  />
+                  <Image src={newProduct.image} alt={newProduct.title} width={192} height={192} className="object-cover w-full h-full"  />
                 </div>
-                <h3 className="text-lg font-semibold text-black">{product.title}</h3>
-                <p className="text-xl font-bold text-black">₦ {product.price}</p>
+                <h3 className="text-lg font-semibold text-black">{newProduct.title}</h3>
+                <p className="text-xl font-bold text-black">₦ {newProduct.price}</p>
                 <div className="flex text-yellow-500 text-3xl">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className={i < product.rating ? 'text-yellow-500' : 'text-gray-400'}>★</span>
+                    <span key={i} className={i < newProduct.rating ? 'text-yellow-500' : 'text-gray-400'}>★</span>
                   ))}
                 </div>
                 <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition">

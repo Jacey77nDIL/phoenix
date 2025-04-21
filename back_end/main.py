@@ -38,7 +38,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend domain, e.g., ["http://localhost:3000"]
+    allow_origins=["*"],  # Or specify your frontend domain, e.g., [""]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,19 +63,18 @@ class Token(BaseModel):
 class Product(BaseModel):
     title: str
     price: float
-    image: str  # You can store URLs or base64 if needed
+    image: str  
     rating: int = 4
 
 @app.get("/api/products")
 async def get_products():
     products = await collection.find().to_list(100)
     return products
-
 @app.post("/api/products")
 async def create_product(product: Product):
     result = await collection.insert_one(product.dict())
-    created_product = await collection.find_one({"_id": result.inserted_id})
-    return created_product
+    return {"id": str(result.inserted_id)}
+
 
 @app.on_event("startup")
 async def startup_event():
