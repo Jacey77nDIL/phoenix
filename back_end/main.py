@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from models import User,UserCreate,UserInDB,Token,Product
 from dotenv import load_dotenv
 import motor.motor_asyncio
 import os
@@ -48,27 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class User(BaseModel):
-    username: str
-    full_name: str
 
-class UserInDB(User):
-    hashed_password: str
-
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    full_name: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    # Product model
-class Product(BaseModel):
-    title: str
-    price: float
-    image: str  
-    rating: int = 4
 
 @app.get("/api/products")
 async def get_products():

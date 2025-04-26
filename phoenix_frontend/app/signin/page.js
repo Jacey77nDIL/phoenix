@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export default function LoginPage() {
+  
   return (
     <main className="min-h-screen bg-gradient-to-r from-[rgba(195,254,121,1)] to-white relative flex flex-col items-center justify-center px-4">
       {/* Logo at top left */}
