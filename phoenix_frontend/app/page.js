@@ -1,3 +1,5 @@
+// pages/index.js
+
 'use client';
 
 import Link from 'next/link';
@@ -19,13 +21,13 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <Link href="/choose-role" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto border border-green-600 text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50">
+            <Link href="/signup" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto border border-green-600 text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-600 hover:text-white transition-colors">
                 Sign Up
               </button>
             </Link>
-            <Link href="/choose-role" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto border border-green-600 text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50">
+            <Link href="/signin" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto border border-green-600 text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-600 hover:text-white transition-colors">
                 Sign In
               </button>
             </Link>

@@ -11,18 +11,22 @@ export default function SimplePage() {
   const [showModal, setShowModal] = useState(false); // Modal visibility state
   const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null }); // New product form data
   const [confirmationMessage, setConfirmationMessage] = useState(''); // Success/Error message
+  const [errorMessage, setErrorMessage] = useState(''); // Error message handling
+  const [loading, setLoading] = useState(false); // Loading state for image uploading
 
   useEffect(() => {
+    // Simulating fetching product list from an API
     fetch('/api/products')
       .then((res) => res.json())
       .then((data) => setProductList(data))
-      .catch((err) => console.error("Error fetching products:", err));
+      .catch((err) => setErrorMessage('Failed to fetch products.'));
   }, []);
 
   // Function to toggle the modal
   const toggleModal = () => {
     setShowModal(!showModal);
     setConfirmationMessage(''); // Reset the message when modal is closed
+    setErrorMessage(''); // Reset error message
   };
 
   // Function to handle form changes
@@ -38,7 +42,9 @@ export default function SimplePage() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'image/jpeg') {
+      setLoading(true); // Set loading to true while uploading
       setNewProduct((prev) => ({ ...prev, image: URL.createObjectURL(file) }));
+      setLoading(false); // Reset loading after the image is set
     } else {
       alert("Only JPG images are allowed.");
     }
@@ -47,6 +53,11 @@ export default function SimplePage() {
   // Function to handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!newProduct.name || !newProduct.price || !newProduct.image) {
+      setErrorMessage('Please fill all fields.');
+      return;
+    }
+
     setProductList((prev) => [
       ...prev,
       {
@@ -62,9 +73,9 @@ export default function SimplePage() {
   };
 
   return (
-    <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white min-h-screen flex flex-col">
+    <div className="bg-[rgba(250,240,230,1)] min-h-screen flex flex-col">
       {/* Top Bar */}
-      <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white flex flex-col sm:flex-row items-center justify-between py-4 px-6 gap-4">
+      <div className="bg-[rgba(250,240,230,1)] flex flex-col sm:flex-row items-center justify-between py-4 px-6 gap-4">
         <Link href="/">
           <Image src="/p2.svg" alt="Logo" width={100} height={100} />
         </Link>
@@ -75,7 +86,7 @@ export default function SimplePage() {
             type="text"
             placeholder="Search..."
             className="w-full p-2 pl-3 text-black rounded-md focus:outline-none"
-            aria-label="Search"
+            aria-label="Search products"
           />
         </div>
 
@@ -87,6 +98,7 @@ export default function SimplePage() {
           <BsPlusCircle
             className="text-green-700 text-3xl hover:text-green-900 cursor-pointer"
             onClick={toggleModal} // Open the modal when clicked
+            aria-label="Add new product"
           />
         </div>
       </div>
@@ -120,7 +132,7 @@ export default function SimplePage() {
                     <span key={i} className={i < product.rating ? 'text-yellow-500' : 'text-gray-400'}>★</span>
                   ))}
                 </div>
-                <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition">
+                <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition" aria-label="Add to Cart">
                   Add to Cart
                 </button>
               </div>
@@ -135,7 +147,7 @@ export default function SimplePage() {
           <div className="bg-white p-6 rounded-lg shadow-lg w-96 transform transition-transform translate-y-10 hover:translate-y-0">
             <div className="flex justify-between">
               <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
-              <button onClick={toggleModal} className="text-gray-500 text-2xl">X</button>
+              <button onClick={toggleModal} className="text-gray-500 text-2xl" aria-label="Close Modal">X</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -147,6 +159,7 @@ export default function SimplePage() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded-md text-black "
                   required
+                  aria-label="Product Name"
                 />
               </div>
               <div className="mb-4">
@@ -158,6 +171,7 @@ export default function SimplePage() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded-md text-black"
                   required
+                  aria-label="Product Price"
                 />
               </div>
               <div className="mb-4">
@@ -169,7 +183,9 @@ export default function SimplePage() {
                   className="w-full p-2 border rounded-md text-black"
                   accept="image/jpeg"
                   required
+                  aria-label="Product Image"
                 />
+                {loading && <p className="text-sm text-gray-500">Uploading image...</p>}
               </div>
               <button type="submit" className="w-full bg-green-500 text-white p-2 rounded-md">
                 Add Product
@@ -177,6 +193,9 @@ export default function SimplePage() {
             </form>
             {confirmationMessage && (
               <div className="mt-4 text-green-500 text-center">{confirmationMessage}</div>
+            )}
+            {errorMessage && (
+              <div className="mt-4 text-red-500 text-center">{errorMessage}</div>
             )}
           </div>
         </div>
