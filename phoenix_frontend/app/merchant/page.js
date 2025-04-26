@@ -8,14 +8,14 @@ import Link from 'next/link';
 
 export default function MerchantPage() {
   const [productList, setProductList] = useState([]);
-  const [showModal, setShowModal] = useState(false); 
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null, description: '' }); 
-  const [confirmationMessage, setConfirmationMessage] = useState(''); 
+  const [showModal, setShowModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null, description: '' });
+  const [confirmationMessage, setConfirmationMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-   
     fetchProducts();
   }, []);
 
@@ -26,15 +26,15 @@ export default function MerchantPage() {
       setProductList(data);
     } catch (err) {
       console.error("Error fetching products:", err);
+      setErrorMessage('Failed to fetch products.');
     }
   };
 
   const toggleModal = () => {
     setShowModal(!showModal);
-    setConfirmationMessage(''); 
+    setConfirmationMessage('');
     setErrorMessage('');
     if (!showModal) {
-      
       setNewProduct({ name: '', price: '', image: null, description: '' });
     }
   };
@@ -50,69 +50,66 @@ export default function MerchantPage() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
+      setLoading(true);
       setNewProduct((prev) => ({
         ...prev,
-        image: URL.createObjectURL(file), // For preview
-        imageFile: file, // Store the actual file object
+        image: URL.createObjectURL(file),
+        imageFile: file,
       }));
+      setLoading(false);
     } else {
       alert("Please select a valid image file.");
     }
   };
 
- // Function to handle form submission
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Create FormData object
-  const formData = new FormData();
-  formData.append('name', newProduct.name);
-  formData.append('price', newProduct.price);
-  
-  // Append the actual file, not the URL
-  if (newProduct.imageFile) {
-    formData.append('image', newProduct.imageFile);
-  }
-  
-  try {
-    // Send the FormData to your API
-    const response = await fetch('/api/upload-product', {
-      method: 'POST',
-      body: formData,
-      // Don't set Content-Type header when using FormData
-      // It will be set automatically including the boundary
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      
-      // Add the new product to the list with the returned image URL
-      setProductList((prev) => [
-        ...prev,
-        {
-          id: productList.length + 1,
-          title: newProduct.name,
-          price: newProduct.price,
-          image: result.imageUrl, // Use the URL returned from the server
-          rating: 4,
-        },
-      ]);
-      
-      setConfirmationMessage('Product added successfully!');
-      setShowModal(false);
-    } else {
-      setConfirmationMessage('Failed to add product.');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newProduct.name || !newProduct.price || !newProduct.image) {
+      setErrorMessage('Please fill all fields.');
+      return;
     }
-  } catch (error) {
-    console.error('Error adding product:', error);
-    setConfirmationMessage('Error adding product.');
-  }
-};
+
+    const formData = new FormData();
+    formData.append('name', newProduct.name);
+    formData.append('price', newProduct.price);
+
+    if (newProduct.imageFile) {
+      formData.append('image', newProduct.imageFile);
+    }
+
+    try {
+      const response = await fetch('/api/upload-product', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setProductList((prev) => [
+          ...prev,
+          {
+            id: productList.length + 1,
+            title: newProduct.name,
+            price: newProduct.price,
+            image: result.imageUrl,
+            rating: 4,
+          },
+        ]);
+        setConfirmationMessage('Product added successfully!');
+        setShowModal(false);
+      } else {
+        setConfirmationMessage('Failed to add product.');
+      }
+    } catch (error) {
+      console.error('Error adding product:', error);
+      setConfirmationMessage('Error adding product.');
+    }
+  };
 
   return (
-    <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white min-h-screen flex flex-col">
+    <div className="bg-[rgba(250,240,230,1)] min-h-screen flex flex-col">
       {/* Top Bar */}
-      <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white flex flex-col sm:flex-row items-center justify-between py-4 px-6 gap-4">
+      <div className="bg-[rgba(250,240,230,1)] flex flex-col sm:flex-row items-center justify-between py-4 px-6 gap-4">
         <Link href="/">
           <Image src="/p2.svg" alt="Logo" width={100} height={100} />
         </Link>
@@ -123,7 +120,7 @@ const handleSubmit = async (e) => {
             type="text"
             placeholder="Search..."
             className="w-full p-2 pl-3 text-black rounded-md focus:outline-none"
-            aria-label="Search"
+            aria-label="Search products"
           />
         </div>
 
@@ -135,6 +132,7 @@ const handleSubmit = async (e) => {
           <BsPlusCircle
             className="text-green-700 text-3xl hover:text-green-900 cursor-pointer"
             onClick={toggleModal}
+            aria-label="Add new product"
           />
         </div>
       </div>
@@ -159,7 +157,7 @@ const handleSubmit = async (e) => {
             {productList.map((product, index) => (
               <div key={product.id || index} className="flex flex-col items-start gap-2 transform transition-transform hover:scale-105 hover:shadow-lg">
                 <div className="w-full h-48 overflow-hidden rounded-lg mb-1">
-                  <Image src={product.image} alt={product.title} width={192} height={192} className="object-cover w-full h-full"  />
+                  <Image src={product.image} alt={product.title} width={192} height={192} className="object-cover w-full h-full" />
                 </div>
                 <h3 className="text-lg font-semibold text-black">{product.title}</h3>
                 <p className="text-xl font-bold text-black">₦ {product.price}</p>
@@ -168,7 +166,7 @@ const handleSubmit = async (e) => {
                     <span key={i} className={i < product.rating ? 'text-yellow-500' : 'text-gray-400'}>★</span>
                   ))}
                 </div>
-                <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition">
+                <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition" aria-label="Add to Cart">
                   Add to Cart
                 </button>
               </div>
@@ -177,15 +175,16 @@ const handleSubmit = async (e) => {
         </div>
       </div>
 
-      {/* Modal (Input Form for New Product) - with transparent backdrop */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/30 backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96 transform transition-all duration-300 ease-in-out">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-green-700">Add New Product</h2>
-              <button 
-                onClick={toggleModal} 
-                className="text-gray-500 hover:text-red-500 text-2xl transition-colors"
+              <button
+                onClick={toggleModal}
+                className="text-gray-500 hover:text-red-500 text-2xl"
+                aria-label="Close Modal"
               >
                 ×
               </button>
@@ -200,6 +199,7 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
+                  aria-label="Product Name"
                 />
               </div>
               <div className="mb-4">
@@ -211,6 +211,7 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
+                  aria-label="Product Price"
                 />
               </div>
               <div className="mb-4">
@@ -232,10 +233,12 @@ const handleSubmit = async (e) => {
                   className="w-full p-2 border border-gray-300 rounded-md text-black"
                   accept="image/*"
                   required
+                  aria-label="Product Image"
                 />
+                {loading && <p className="text-sm text-gray-500">Uploading image...</p>}
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 font-medium"
                 disabled={isSubmitting}
               >

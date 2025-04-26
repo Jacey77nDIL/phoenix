@@ -14,6 +14,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState(null);  // To handle form submission errors
+  const [loading, setLoading] = useState(false);  // Loading state for submission
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,24 +35,20 @@ export default function SignUpPage() {
 
       const data = await response.json();
       if (!response.ok) {
-        // If registration fails, display the error message
         setError(data.detail || 'Something went wrong');
       } else {
-        // If registration is successful, redirect to the waitlist success page
-        router.push(`/merchant`);
+        router.push('/BusinessRegistrationPage');  // Redirect on success
       }
       
     } catch (err) {
       setError('An error occurred while registering');
+    } finally {
+      setLoading(false);  // End loading state
     }
-//=======
-    // Update the redirect to a page inside the merchant folder
-    //router.push('/merchant');  // Change this to the actual page path you want to go to
-//>>>>>>>Stashed changes
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-r from-[rgba(195,254,121,1)] to-white relative flex flex-col items-center justify-center px-4">
+    <main className="min-h-screen bg-[rgba(250,240,230,1)] relative flex flex-col items-center justify-center px-4">
       {/* Logo at top left */}
       <Link href="/" className="absolute top-4 left-4 p-2 bg-white rounded-full">
         <Image src="/p2.svg" alt="Logo" width={80} height={80} />
@@ -113,10 +110,11 @@ export default function SignUpPage() {
 
         {/* Sign Up Button */}
         <button
-          className="w-full bg-[#5e852c] text-white py-3 px-10 rounded-xl font-semibold hover:bg-green-800"
+          className="w-full bg-gradient-to-r from-[rgba(4,192,100,1)] to-[rgba(188,253,114,1)] text-white py-3 px-10 rounded-xl font-semibold hover:bg-green-800"
           onClick={handleSubmit}
+          disabled={loading}  // Disable button when loading
         >
-          Sign Up
+          {loading ? 'Signing Up...' : 'Sign Up'}
         </button>
 
         {/* Footer Links */}
