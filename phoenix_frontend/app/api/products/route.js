@@ -1,52 +1,31 @@
-// app/api/products/route.js
+
+let products = []; 
 
 export async function GET() {
-    const products = [
-      {
-        id: 1,
-        title: 'Afro Combo',
-        price: 4500,
-        rating: 4,
-        image: '/comb.jpg',
-      },
-      {
-        id: 2,
-        title: 'Wave Kit',
-        price: 5200,
-        rating: 5,
-        image: '/comb.jpg',
-      },
-      {
-        id: 1,
-        title: 'Afro Combo',
-        price: 4500,
-        rating: 4,
-        image: '/comb.jpg',
-      },
-      {
-        id: 1,
-        title: 'Afro Combo',
-        price: 4500,
-        rating: 4,
-        image: '/comb.jpg',
-      },
-      {
-        id: 1,
-        title: 'Afro Combo',
-        price: 4500,
-        rating: 4,
-        image: '/comb.jpg',
-      },
-      {
-        id: 1,
-        title: 'Afro Combo',
-        price: 4500,
-        rating: 4,
-        image: '/comb.jpg',
-      },
-      // add more products
-    ];
+  return Response.json(products);
+}
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const newProduct = {
+      id: products.length + 1,
+      title: body.name,
+      price: body.price,
+      image: body.image,
+      rating: 4
+    };
+
+    products.push(newProduct);
+
+    return new Response(JSON.stringify({ message: "Product added", product: newProduct }), {
+      status: 201,
+    });
+  } 
   
-    return Response.json(products);
+  catch (error) {
+    return new Response(JSON.stringify({ message: "Failed to add product", error }), {
+      status: 500,
+    });
   }
-  
+}

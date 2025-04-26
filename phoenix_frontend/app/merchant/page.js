@@ -6,30 +6,39 @@ import { BiSearchAlt } from 'react-icons/bi';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function SimplePage() {
+export default function MerchantPage() {
   const [productList, setProductList] = useState([]);
-  const [showModal, setShowModal] = useState(false); // Modal visibility state
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null }); // New product form data
-  const [confirmationMessage, setConfirmationMessage] = useState(''); // Success/Error message
-  const [errorMessage, setErrorMessage] = useState(''); // Error message handling
-  const [loading, setLoading] = useState(false); // Loading state for image uploading
+  const [showModal, setShowModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null, description: '' });
+  const [confirmationMessage, setConfirmationMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Simulating fetching product list from an API
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => setProductList(data))
-      .catch((err) => setErrorMessage('Failed to fetch products.'));
+    fetchProducts();
   }, []);
 
-  // Function to toggle the modal
-  const toggleModal = () => {
-    setShowModal(!showModal);
-    setConfirmationMessage(''); // Reset the message when modal is closed
-    setErrorMessage(''); // Reset error message
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      setProductList(data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setErrorMessage('Failed to fetch products.');
+    }
   };
 
-  // Function to handle form changes
+  const toggleModal = () => {
+    setShowModal(!showModal);
+    setConfirmationMessage('');
+    setErrorMessage('');
+    if (!showModal) {
+      setNewProduct({ name: '', price: '', image: null, description: '' });
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewProduct((prev) => ({
@@ -38,38 +47,63 @@ export default function SimplePage() {
     }));
   };
 
-  // Function to handle image file change
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type === 'image/jpeg') {
-      setLoading(true); // Set loading to true while uploading
-      setNewProduct((prev) => ({ ...prev, image: URL.createObjectURL(file) }));
-      setLoading(false); // Reset loading after the image is set
+    if (file && file.type.startsWith('image/')) {
+      setLoading(true);
+      setNewProduct((prev) => ({
+        ...prev,
+        image: URL.createObjectURL(file),
+        imageFile: file,
+      }));
+      setLoading(false);
     } else {
-      alert("Only JPG images are allowed.");
+      alert("Please select a valid image file.");
     }
   };
 
-  // Function to handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.image) {
       setErrorMessage('Please fill all fields.');
       return;
     }
 
-    setProductList((prev) => [
-      ...prev,
-      {
-        id: productList.length + 1,
-        title: newProduct.name,
-        price: newProduct.price,
-        image: newProduct.image,
-        rating: 4, // Static rating for now
-      },
-    ]);
-    setConfirmationMessage('Product added successfully!'); // Success message
-    setShowModal(false); // Close the modal after submission
+    const formData = new FormData();
+    formData.append('name', newProduct.name);
+    formData.append('price', newProduct.price);
+
+    if (newProduct.imageFile) {
+      formData.append('image', newProduct.imageFile);
+    }
+
+    try {
+      const response = await fetch('/api/upload-product', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setProductList((prev) => [
+          ...prev,
+          {
+            id: productList.length + 1,
+            title: newProduct.name,
+            price: newProduct.price,
+            image: result.imageUrl,
+            rating: 4,
+          },
+        ]);
+        setConfirmationMessage('Product added successfully!');
+        setShowModal(false);
+      } else {
+        setConfirmationMessage('Failed to add product.');
+      }
+    } catch (error) {
+      console.error('Error adding product:', error);
+      setConfirmationMessage('Error adding product.');
+    }
   };
 
   return (
@@ -97,7 +131,7 @@ export default function SimplePage() {
           </div>
           <BsPlusCircle
             className="text-green-700 text-3xl hover:text-green-900 cursor-pointer"
-            onClick={toggleModal} // Open the modal when clicked
+            onClick={toggleModal}
             aria-label="Add new product"
           />
         </div>
@@ -120,8 +154,8 @@ export default function SimplePage() {
 
         <div className="flex-1 p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {productList.map((product) => (
-              <div key={product.id} className="flex flex-col items-start gap-2 transform transition-transform hover:scale-105 hover:shadow-lg">
+            {productList.map((product, index) => (
+              <div key={product.id || index} className="flex flex-col items-start gap-2 transform transition-transform hover:scale-105 hover:shadow-lg">
                 <div className="w-full h-48 overflow-hidden rounded-lg mb-1">
                   <Image src={product.image} alt={product.title} width={192} height={192} className="object-cover w-full h-full" />
                 </div>
@@ -141,13 +175,19 @@ export default function SimplePage() {
         </div>
       </div>
 
-      {/* Modal (Input Form for New Product) */}
+      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-opacity-50 z-50 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 transform transition-transform translate-y-10 hover:translate-y-0">
-            <div className="flex justify-between">
-              <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
-              <button onClick={toggleModal} className="text-gray-500 text-2xl" aria-label="Close Modal">X</button>
+        <div className="fixed inset-0 flex justify-center items-center bg-black/30 backdrop-blur-sm z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96 transform transition-all duration-300 ease-in-out">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-green-700">Add New Product</h2>
+              <button
+                onClick={toggleModal}
+                className="text-gray-500 hover:text-red-500 text-2xl"
+                aria-label="Close Modal"
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -157,7 +197,7 @@ export default function SimplePage() {
                   name="name"
                   value={newProduct.name}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded-md text-black "
+                  className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                   aria-label="Product Name"
                 />
@@ -169,9 +209,19 @@ export default function SimplePage() {
                   name="price"
                   value={newProduct.price}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded-md text-black"
+                  className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                   aria-label="Product Price"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-2 text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={newProduct.description}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  rows="3"
                 />
               </div>
               <div className="mb-4">
@@ -180,22 +230,30 @@ export default function SimplePage() {
                   type="file"
                   name="image"
                   onChange={handleImageChange}
-                  className="w-full p-2 border rounded-md text-black"
-                  accept="image/jpeg"
+                  className="w-full p-2 border border-gray-300 rounded-md text-black"
+                  accept="image/*"
                   required
                   aria-label="Product Image"
                 />
                 {loading && <p className="text-sm text-gray-500">Uploading image...</p>}
               </div>
-              <button type="submit" className="w-full bg-green-500 text-white p-2 rounded-md">
-                Add Product
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 font-medium"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Adding...' : 'Add Product'}
               </button>
             </form>
             {confirmationMessage && (
-              <div className="mt-4 text-green-500 text-center">{confirmationMessage}</div>
+              <div className="mt-4 p-2 bg-green-100 text-green-700 text-center rounded-md">
+                {confirmationMessage}
+              </div>
             )}
             {errorMessage && (
-              <div className="mt-4 text-red-500 text-center">{errorMessage}</div>
+              <div className="mt-4 p-2 bg-red-100 text-red-700 text-center rounded-md">
+                {errorMessage}
+              </div>
             )}
           </div>
         </div>

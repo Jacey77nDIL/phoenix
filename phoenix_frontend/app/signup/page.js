@@ -18,14 +18,6 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate password
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
-    // Prepare the data to send
     const userData = {
       username: email,  // Assuming email is used as the username
       password,
@@ -33,8 +25,7 @@ export default function SignUpPage() {
     };
 
     try {
-      setLoading(true); // Start loading state
-      const response = await fetch('http://127.0.0.1:8000/register', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,6 +39,7 @@ export default function SignUpPage() {
       } else {
         router.push('/BusinessRegistrationPage');  // Redirect on success
       }
+      
     } catch (err) {
       setError('An error occurred while registering');
     } finally {
