@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from models import User,UserCreate,UserInDB,Token,Product
 from dotenv import load_dotenv
 import motor.motor_asyncio
 import os
@@ -42,44 +42,23 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend domain, e.g., ["http://localhost:3000"]
+    allow_origins=["*"],  # Or specify your frontend domain, e.g., [""]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class User(BaseModel):
-    username: str
-    full_name: str
 
-class UserInDB(User):
-    hashed_password: str
-
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    full_name: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    # Product model
-class Product(BaseModel):
-    title: str
-    price: float
-    image: str  # You can store URLs or base64 if needed
-    rating: int = 4
 
 @app.get("/api/products")
 async def get_products():
     products = await collection.find().to_list(100)
     return products
-
 @app.post("/api/products")
 async def create_product(product: Product):
     result = await collection.insert_one(product.dict())
-    created_product = await collection.find_one({"_id": result.inserted_id})
-    return created_product
+    return {"id": str(result.inserted_id)}
+
 
 @app.on_event("startup")
 async def startup_event():

@@ -45,6 +45,10 @@ export default function SignUpPage() {
     } finally {
       setLoading(false);  // End loading state
     }
+
+    // Update the redirect to a page inside the merchant folder
+    //router.push('/merchant');  // Change this to the actual page path you want to go to
+
   };
 
   return (
