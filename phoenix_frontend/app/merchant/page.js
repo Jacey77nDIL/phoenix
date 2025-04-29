@@ -7,14 +7,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 export default function MerchantPage() {
   const [productList, setProductList] = useState([]);
-  const [showModal, setShowModal] = useState(false); 
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null, description: '' }); 
-  const [confirmationMessage, setConfirmationMessage] = useState(''); 
+  const [showModal, setShowModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: null, description: '' });
+  const [confirmationMessage, setConfirmationMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-   
     fetchProducts();
   }, []);
 
@@ -25,6 +25,7 @@ export default function MerchantPage() {
       setProductList(data);
     } catch (err) {
       console.error("Error fetching products:", err);
+      setErrorMessage('Failed to fetch products.');
     }
   };
 
@@ -33,7 +34,6 @@ export default function MerchantPage() {
     setConfirmationMessage(' '); 
     setErrorMessage('');
     if (!showModal) {
-      
       setNewProduct({ name: '', price: '', image: null, description: '' });
     }
   };
@@ -49,11 +49,14 @@ export default function MerchantPage() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
+      setLoading(true);
       setNewProduct((prev) => ({
         ...prev,
+
         image: URL.createObjectURL(file), // For preview
         imageFile: file, 
       }));
+      setLoading(false);
     } else {
       alert("Please select a valid image file.");
     }
@@ -96,10 +99,11 @@ const handleSubmit = async (e) => {
     setIsSubmitting(false);
   }
 };
+  
   return (
-    <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white min-h-screen flex flex-col">
+    <div className="bg-[rgba(250,240,230,1)] min-h-screen flex flex-col">
       {/* Top Bar */}
-      <div className="bg-gradient-to-r from-[rgba(195,254,121,1)] to-white flex flex-col sm:flex-row items-center justify-between py-4 px-6 gap-4">
+      <div className="bg-[rgba(250,240,230,1)] flex flex-col sm:flex-row items-center justify-between py-4 px-6 gap-4">
         <Link href="/">
           <Image src="/p2.svg" alt="Logo" width={100} height={100} />
         </Link>
@@ -110,7 +114,7 @@ const handleSubmit = async (e) => {
             type="text"
             placeholder="Search..."
             className="w-full p-2 pl-3 text-black rounded-md focus:outline-none"
-            aria-label="Search"
+            aria-label="Search products"
           />
         </div>
 
@@ -122,6 +126,7 @@ const handleSubmit = async (e) => {
           <BsPlusCircle
             className="text-green-700 text-3xl hover:text-green-900 cursor-pointer"
             onClick={toggleModal}
+            aria-label="Add new product"
           />
         </div>
       </div>
@@ -155,7 +160,7 @@ const handleSubmit = async (e) => {
                     <span key={i} className={i < newProduct.rating ? 'text-yellow-500' : 'text-gray-400'}>★</span>
                   ))}
                 </div>
-                <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition">
+                <button className="mt-2 px-6 py-2 bg-green-500 border border-black text-black rounded hover:bg-green-600 hover:scale-105 transition" aria-label="Add to Cart">
                   Add to Cart
                 </button>
               </div>
@@ -164,15 +169,16 @@ const handleSubmit = async (e) => {
         </div>
       </div>
 
-      {/* Modal (Input Form for New Product) - with transparent backdrop */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/30 backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96 transform transition-all duration-300 ease-in-out">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-green-700">Add New Product</h2>
-              <button 
-                onClick={toggleModal} 
-                className="text-gray-500 hover:text-red-500 text-2xl transition-colors"
+              <button
+                onClick={toggleModal}
+                className="text-gray-500 hover:text-red-500 text-2xl"
+                aria-label="Close Modal"
               >
                 ×
               </button>
@@ -187,6 +193,7 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
+                  aria-label="Product Name"
                 />
               </div>
               <div className="mb-4">
@@ -198,6 +205,7 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
+                  aria-label="Product Price"
                 />
               </div>
               <div className="mb-4">
@@ -219,10 +227,12 @@ const handleSubmit = async (e) => {
                   className="w-full p-2 border border-gray-300 rounded-md text-black"
                   accept="image/*"
                   required
+                  aria-label="Product Image"
                 />
+                {loading && <p className="text-sm text-gray-500">Uploading image...</p>}
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 font-medium"
                 disabled={isSubmitting}
               >
